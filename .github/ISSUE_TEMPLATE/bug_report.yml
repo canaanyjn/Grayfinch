@@ -1,0 +1,45 @@
+name: Bug report
+description: Report a reproducible problem in Grayfinch.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a problem. Do not include credentials or client tokens.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened, and what did you expect instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Provide the smallest set of steps that reproduces the issue.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: v0.1.0 or a commit SHA
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include Node.js, browser, operating system, and Cloudflare details that are safe to share.
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Remove tokens, cookies, account identifiers, and private data before pasting logs.
+      render: shell

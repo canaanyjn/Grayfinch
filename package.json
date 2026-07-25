@@ -1,0 +1,64 @@
+{
+  "name": "grayfinch",
+  "private": true,
+  "version": "0.1.0",
+  "description": "A lightweight remote configuration and gradual rollout console for Cloudflare Workers.",
+  "license": "MIT",
+  "author": "canaanyjn",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/canaanyjn/Grayfinch.git"
+  },
+  "bugs": {
+    "url": "https://github.com/canaanyjn/Grayfinch/issues"
+  },
+  "homepage": "https://github.com/canaanyjn/Grayfinch#readme",
+  "keywords": [
+    "cloudflare-workers",
+    "remote-config",
+    "feature-flags",
+    "gradual-rollout",
+    "d1"
+  ],
+  "engines": {
+    "node": ">=22",
+    "npm": ">=10"
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --config vitest.config.ts",
+    "check": "npm run typecheck && npm test",
+    "ci": "npm run check && npm run build",
+    "db:migrate:local": "wrangler d1 migrations apply grayfinch --local",
+    "db:migrate:remote": "wrangler d1 migrations apply grayfinch --remote",
+    "db:seed:local": "wrangler d1 execute grayfinch --local --file=seed.sql",
+    "deploy": "npm run build && npm run deploy:public && npm run deploy:admin",
+    "deploy:public": "wrangler deploy --config wrangler.public.jsonc",
+    "deploy:admin": "wrangler deploy"
+  },
+  "dependencies": {
+    "@fontsource-variable/dm-sans": "^5.3.0",
+    "@fontsource-variable/space-grotesk": "^5.3.0",
+    "hono": "^4.12.32",
+    "jose": "^6.2.4",
+    "lucide-react": "^1.26.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.47.0",
+    "@cloudflare/workers-types": "^5.20260724.1",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.4",
+    "typescript": "^7.0.2",
+    "vite": "^8.1.5",
+    "vitest": "^4.1.10",
+    "wrangler": "^4.114.0"
+  }
+}
