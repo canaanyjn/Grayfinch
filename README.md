@@ -1,5 +1,7 @@
 # Grayfinch
 
+![Grayfinch — Remote Configuration / Gradual Rollouts](docs/assets/grayfinch-banner-v2.png)
+
 [![CI](https://github.com/canaanyjn/Grayfinch/actions/workflows/ci.yml/badge.svg)](https://github.com/canaanyjn/Grayfinch/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-F38020?logo=cloudflare&logoColor=white)](https://workers.cloudflare.com/)
