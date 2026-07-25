@@ -1,0 +1,4 @@
+interface:
+  display_name: "Deploy Grayfinch to Cloudflare"
+  short_description: "Deploy Grayfinch Workers, D1, and Access safely"
+  default_prompt: "Use $deploy-grayfinch-cloudflare to deploy this Grayfinch project to my Cloudflare account."

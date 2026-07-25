@@ -1,0 +1,4 @@
+interface:
+  display_name: "Integrate Grayfinch"
+  short_description: "Connect an application to Grayfinch rollouts safely"
+  default_prompt: "Use $integrate-grayfinch to add Grayfinch remote configuration to this product."

@@ -224,6 +224,7 @@ credentials. Clients can report arbitrary values.
 ```text
 .
 ├── migrations/          D1 schema migrations
+├── skills/              Reusable agent workflows for deployment and integration
 ├── src/                 React administration interface
 ├── tests/               Unit tests
 ├── worker/              Hono API and rollout evaluator
@@ -231,6 +232,23 @@ credentials. Clients can report arbitrary values.
 ├── wrangler.example.jsonc
 └── wrangler.public.example.jsonc
 ```
+
+## Agent Skills
+
+This repository includes two reusable agent skills:
+
+- [`deploy-grayfinch-cloudflare`](skills/deploy-grayfinch-cloudflare/SKILL.md)
+  deploys and verifies Grayfinch on Workers, D1, and Cloudflare Access.
+- [`integrate-grayfinch`](skills/integrate-grayfinch/SKILL.md) adds a resilient
+  Grayfinch client to an existing product.
+
+Install them with the open-source [`skills`](https://skills.sh/) CLI:
+
+```bash
+npx skills add canaanyjn/Grayfinch
+```
+
+Invoke them as `$deploy-grayfinch-cloudflare` and `$integrate-grayfinch`.
 
 ## Contributing
 
