@@ -6,10 +6,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-F38020?logo=cloudflare&logoColor=white)](https://workers.cloudflare.com/)
 
-Grayfinch is a lightweight remote configuration and gradual rollout console
-built for Cloudflare Workers. It provides an Access-protected administration
-interface, an edge API for clients, deterministic percentage rollouts, and an
-auditable configuration history backed by Cloudflare D1.
+Grayfinch is a lightweight remote configuration and gradual rollout console.
+It can run on Cloudflare Workers with D1, or as a self-hosted container in
+mainland China (including Alibaba Cloud, Tencent Cloud, Huawei Cloud, and any
+other platform that provides a container runtime and persistent volume).
+Both deployment paths expose the same administration and client APIs.
 
 > Let every configuration change fly with a small flock first.
 
@@ -24,21 +25,30 @@ auditable configuration history backed by Cloudflare D1.
 - Cloudflare Access JWT validation for all administration endpoints
 - `ETag` and `If-None-Match` support for efficient client polling
 - Separate public and administration Workers without requiring a custom domain
+- Domestic container deployment with built-in SQLite and token-protected admin
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    Admin["Administrator"] --> Access["Cloudflare Access"]
-    Access --> Console["grayfinch-admin Worker"]
-    Client["Application client"] --> API["grayfinch Worker"]
-    Console --> D1[("Cloudflare D1")]
-    API --> D1
+    Client["Application client"] --> Public["Public API"]
+    Admin["Administrator"] --> Console["Administration console"]
+    Console --> Store[("Configuration store")]
+    Public --> Store
+    subgraph CF["Cloudflare"]
+      Public --> Worker["Worker + D1"]
+      Console --> Access["Cloudflare Access"]
+    end
+    subgraph CN["Mainland China / self-hosted"]
+      Public --> Container["Node container + SQLite"]
+      Console --> Token["Admin token"]
+    end
 ```
 
-The administration Worker serves the React console and `/api/admin/*`. The
-public Worker only serves `/api/v1/config/*`. Both Workers share the same D1
-database.
+The public surface only serves `/api/v1/config/*`; the administration surface
+serves the console and `/api/admin/*`. On Cloudflare, two Workers share one D1
+database. In the domestic container path, two container instances share one
+SQLite persistent volume.
 
 The split is intentional: Cloudflare Access protects every route on a Worker
 when the Worker itself is selected as the application destination. Separating
@@ -50,15 +60,16 @@ management surface remains protected.
 - React 19 and TypeScript
 - Hono
 - Vite and the Cloudflare Vite plugin
-- Cloudflare Workers, D1, and Access
+- Cloudflare Workers, D1, and Access (Cloudflare deployment)
+- Node.js 22 built-in SQLite (domestic container deployment)
 - Vitest
 
 ## Requirements
 
 - Node.js 22 or newer
 - npm 10 or newer
-- A Cloudflare account for production deployment
-- Wrangler authentication for D1 and Worker operations
+- Either a Cloudflare account and Wrangler, or a container platform with a
+  persistent volume
 
 ## Local development
 
@@ -130,6 +141,54 @@ Treat client tokens as secrets. Do not embed privileged administration
 credentials in client applications.
 
 ## Production deployment
+
+### Mainland China / self-hosted container
+
+The domestic path is provider-neutral: it runs on a single Node 22 container
+with a persistent SQLite volume, so it can be deployed to Alibaba Cloud ECS,
+Tencent Cloud Lighthouse/CVM, Huawei Cloud ECS, or a managed container product
+that can mount durable storage. The two surfaces must be deployed separately;
+do not expose the administration container publicly without an HTTPS reverse
+proxy and a strong `ADMIN_API_TOKEN`.
+
+For a local smoke deployment, create an ignored `.env` file with a long random
+token, then start both services:
+
+```bash
+openssl rand -hex 32
+# Put the value in .env as ADMIN_API_TOKEN=...
+docker compose -f docker-compose.domestic.yml up --build
+```
+
+- Administration console: `http://localhost:8787`
+- Public client API: `http://localhost:8788`
+
+The administration container applies every SQL file in `migrations/` to the
+named volume before the public API starts.
+The console asks for the administration token once and keeps it only in the
+browser session. The public API continues to require each application's client
+token.
+
+For a single-process development run instead of Docker:
+
+```bash
+npm run build:domestic
+ADMIN_API_TOKEN="replace-with-a-long-random-value" \
+DEPLOYMENT_ROLE=admin npm run start:domestic
+```
+
+Run a second process with `DEPLOYMENT_ROLE=public`, a distinct `PORT`, and the
+same `DATABASE_PATH` only when both processes are on the same host. For
+multi-node domestic production, use one instance with a durable volume today;
+SQLite volumes must not be shared over network filesystems. A PostgreSQL
+adapter is the appropriate next step before horizontal scaling.
+
+Cloudflare and domestic deployments deliberately use independent stores. This
+keeps credentials and latency local; if the same configuration must be active
+in both regions, use one deployment as the source of truth and add an explicit
+replication workflow rather than attempting to share a SQLite or D1 file.
+
+### Cloudflare
 
 ### 1. Create D1
 
@@ -210,6 +269,8 @@ credentials. Clients can report arbitrary values.
 | --- | --- |
 | `npm run dev` | Start the local Vite and Worker development server |
 | `npm run build` | Build the Worker and administration interface |
+| `npm run build:domestic` | Build the self-hosted container interface |
+| `npm run start:domestic` | Start one domestic `admin` or `public` process |
 | `npm test` | Run the test suite |
 | `npm run typecheck` | Run TypeScript validation |
 | `npm run check` | Run type checking and tests |

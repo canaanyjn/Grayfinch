@@ -4,7 +4,7 @@ import {
   evaluateRollout,
   isValidVersion,
   stableBucket,
-} from "../worker/evaluator";
+} from "../worker/evaluator.ts";
 
 describe("rollout evaluator", () => {
   it("keeps the same client in the same bucket", async () => {

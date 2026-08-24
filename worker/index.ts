@@ -1,11 +1,17 @@
 import { Hono } from "hono";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { z } from "zod";
-import { evaluateRollout, isValidVersion } from "./evaluator";
+import { evaluateRollout, isValidVersion } from "./evaluator.ts";
 
 type Bindings = {
   DB: D1Database;
   DEPLOYMENT_ROLE?: "admin" | "public";
+  /**
+   * Cloudflare deployments use Access by default.  The self-hosted runtime
+   * sets this to `token` and supplies ADMIN_API_TOKEN instead.
+   */
+  ADMIN_AUTH_MODE?: "cloudflare" | "token";
+  ADMIN_API_TOKEN?: string;
   ACCESS_TEAM_DOMAIN?: string;
   ACCESS_AUD?: string;
   LOCAL_DEV_AUTH_BYPASS?: string;
@@ -115,6 +121,34 @@ app.use("/api/admin/*", async (context, next) => {
     context.set("userEmail", "local-developer");
     await next();
     return;
+  }
+
+  const authMode = context.env.ADMIN_AUTH_MODE ?? "cloudflare";
+  context.header("X-Grayfinch-Admin-Auth", authMode);
+  if (authMode === "token") {
+    const expectedToken = context.env.ADMIN_API_TOKEN?.trim();
+    if (!expectedToken) {
+      return context.json(
+        { error: "管理后台令牌尚未配置。" },
+        503,
+      );
+    }
+
+    const suppliedToken = readBearer(context.req.header("Authorization"));
+    if (
+      !suppliedToken ||
+      (await sha256Hex(suppliedToken)) !== (await sha256Hex(expectedToken))
+    ) {
+      return context.json({ error: "管理后台令牌无效。" }, 401);
+    }
+
+    context.set("userEmail", "token-authenticated-admin");
+    await next();
+    return;
+  }
+
+  if (authMode !== "cloudflare") {
+    return context.json({ error: "管理后台鉴权模式无效。" }, 503);
   }
 
   const teamDomain = normalizeTeamDomain(context.env.ACCESS_TEAM_DOMAIN);

@@ -1,0 +1,37 @@
+services:
+  admin:
+    build: .
+    environment:
+      DEPLOYMENT_ROLE: admin
+      PORT: 8787
+      DATABASE_PATH: /var/lib/grayfinch/grayfinch.db
+      # Use a long random value. Keep it in your platform's secret manager.
+      ADMIN_API_TOKEN: ${ADMIN_API_TOKEN:?Set ADMIN_API_TOKEN in .env}
+    volumes:
+      - grayfinch-data:/var/lib/grayfinch
+    ports:
+      - "8787:8787"
+    healthcheck:
+      test:
+        ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:8787/api/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))\""]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  public:
+    build: .
+    environment:
+      DEPLOYMENT_ROLE: public
+      PORT: 8787
+      DATABASE_PATH: /var/lib/grayfinch/grayfinch.db
+      RUN_MIGRATIONS: "false"
+    volumes:
+      - grayfinch-data:/var/lib/grayfinch
+    ports:
+      - "8788:8787"
+    depends_on:
+      admin:
+        condition: service_healthy
+
+volumes:
+  grayfinch-data:

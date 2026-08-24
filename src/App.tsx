@@ -168,6 +168,11 @@ export function App() {
   }, [environment, selectedAppId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function signOut() {
+    if (api.hasStoredAdminToken()) {
+      api.clearStoredAdminToken();
+      window.location.reload();
+      return;
+    }
     window.location.assign("/cdn-cgi/access/logout");
   }
 
